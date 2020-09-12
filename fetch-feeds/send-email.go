@@ -54,6 +54,9 @@ func SendEmail(feed *gofeed.Feed) {
 	_, err := sendgrid.API(request)
 
 	if err != nil {
+		fmt.Println(os.Getenv("EMAIL_TO"))
+		fmt.Println(os.Getenv("EMAIL_FROM"))
+		fmt.Println(os.Getenv("SENDGRID_API_KEY"))
 		fmt.Println(err)
 		panic(err)
 	}
