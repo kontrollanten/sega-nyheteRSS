@@ -1,0 +1,21 @@
+#!/bin/bash
+
+export GOPATH="/go"
+export GOCACHE="/go/.cache"
+echo "sega-nyheter: Start install RSS"
+apt update
+apt install golang-go make go-dep python3-openstackclient -y
+mkdir -p /go/src
+mkdir /go/.cache
+cd /go/src
+git clone https://github.com/kontrollanten/sega-nyheterss.git
+cd sega-nyheterss
+set -o allexport
+. /etc/environment
+set +o allexport
+make && make build
+chmod 777 bin/fetch-feeds
+su - ubuntu
+bin/fetch-feeds
+
+openstack server delete sega-nyheter

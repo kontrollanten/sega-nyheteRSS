@@ -1,0 +1,53 @@
+version: 2.1
+
+steps:
+  - restore_cache:
+      keys:
+        - pip-packages-v1-{{ .Branch }}-
+        - pip-packages-v1-
+  - save_cache:
+      paths:
+        - ~/.cache/pip
+      key: pip-packages-v1-{{ .Branch }}
+
+jobs:
+  deploy:
+    docker:
+      - image: circleci/python:3.8.4
+    environment:
+      OS_AUTH_URL: https://sto2.citycloud.com:5000
+      OS_USER_DOMAIN_NAME: CCP_Domain_32840
+      OS_PROJECT_DOMAIN_NAME: CCP_Domain_32840
+      OS_REGION_NAME: Sto2
+      OS_PROJECT_NAME: "Hitta Skyddsrum"
+      OS_TENANT_NAME: "Hitta Skyddsrum"
+      OS_AUTH_VERSION: 3
+      OS_IDENTITY_API_VERSION: 3
+    steps:
+      - checkout
+      - run: pip install python-openstackclient
+      - run: sudo apt update && sudo apt install cloud-image-utils gettext-base
+      - run: cat cloud-config.txt | envsubst > cloud-config-enved.txt
+      - run: write-mime-multipart --output=userdata.txt user-data-script.txt:text/x-shellscript cloud-config-enved.txt
+      - run:
+          command: |
+            openstack server create \
+              --image 8cd2f7eb-ecb3-401d-bb34-82ab5ddc25e1 \
+              --flavor 1C-0.5GB \
+              --user-data userdata.txt \
+              --network b9261093-27b5-460c-b9f9-82fd90de466c \
+              --key-name kontrollanten \
+              sega-nyheter
+
+workflows:
+  version: 2
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 4 * * 0"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - deploy
